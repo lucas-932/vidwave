@@ -1,0 +1,9 @@
+# 忽略配置文件中的敏感信息
+application.yml
+
+# 忽略 IDE 文件
+.idea/
+*.iml
+
+# 忽略 target 编译目录
+target/
