@@ -81,7 +81,7 @@ VidWave/
 
 ## 📸 效果演示
 
-> ![阶段一运行效果图](C:\Users\Aholic\IdeaProjects\Vidwave\screenshots\阶段一运行效果图.png)
+![阶段一滑动播放截图](./screenshots/stage1-1.png)
 
 ## 📝 许可证
 
