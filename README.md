@@ -81,9 +81,7 @@ VidWave/
 
 ## 📸 效果演示
 
-> 阶段一运行截图（替换为你的截图）
-
-<img src="./screenshots/stage1-1.png" width="300" alt="滑动播放截图">
+> ![阶段一运行效果图](C:\Users\Aholic\IdeaProjects\Vidwave\screenshots\阶段一运行效果图.png)
 
 ## 📝 许可证
 
