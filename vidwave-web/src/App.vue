@@ -3,125 +3,138 @@
     <!-- 如果没登录，显示登录页 -->
     <LoginPage v-if="!userStore.isLoggedIn()" />
 
-    <!-- 如果已登录，显示视频滑动页 -->
-    <template v-else>
-      <!-- 顶部栏：头像 + 用户名 + 退出 -->
-      <div class="top-bar">
-        <img
-          :src="userStore.avatarUrl || 'https://via.placeholder.com/40'"
-          class="avatar"
-          alt="头像"
-        />
-        <span class="username">{{ userStore.username }}</span>
-        <button @click="handleLogout" class="logout-btn">退出</button>
-      </div>
+    <!-- 如果已登录，显示完整的Web端布局 -->
+    <div class="layout" v-else>
+      <!-- 顶部导航栏（以后放Logo、搜索框、头像等） -->
+      <header class="top-nav">
+        <!-- 左侧 Logo -->
+        <span class="logo">VidWave 微澜</span>
 
-      <!-- 视频滑动区 -->
-      <swiper
-        :direction="'vertical'"
-        :slides-per-view="1"
-        :space-between="0"
-        :modules="modules"
-        :mousewheel="true"
-        @swiper="onSwiper"
-        @slide-change="onSlideChange"
-        class="video-swiper"
-      >
-        <swiper-slide v-for="video in videos" :key="video.id">
-          <div class="video-container">
-            <video
-              :ref="(el) => setVideoRef(el, video.id)"
-              :src="video.videoUrl"
-              :poster="video.coverUrl"
-              muted
-              loop
-              playsinline
-              webkit-playsinline
-              preload="metadata"
-              @loadedmetadata="handleLoaded(video.id)"
-            />
+        <!-- 中间搜索框 -->
+        <div class="search-box">
+          <input type="text" placeholder="搜索你感兴趣的内容" />
+          <span class="search-icon">🔍</span>
+        </div>
 
-            <div class="actions">
-              <div class="action-btn">❤️ {{ video.likeCount }}</div>
-              <div class="action-btn">💬 {{ video.commentCount }}</div>
-              <div class="action-btn">🔗 0</div>
-            </div>
-            <div class="title">{{ video.title }}</div>
+        <!-- 右侧操作区 -->
+        <div class="header-actions">
+          <!-- 投稿按钮 -->
+          <div class="action-item">
+            <span class="action-icon">📤</span>
+            <span class="action-text">投稿</span>
           </div>
-        </swiper-slide>
-      </swiper>
+          <!-- 消息按钮 -->
+          <div class="action-item">
+            <span class="action-icon">💬</span>
+            <span class="action-text">消息</span>
+          </div>
+          <!-- 通知按钮 -->
+          <div class="action-item">
+            <span class="action-icon">🔔</span>
+            <span class="action-text">通知</span>
+          </div>
 
-      <div v-if="videos.length === 0" class="loading">微澜正在赶来...</div>
-    </template>
+          <!-- 头像 + 悬停弹窗 -->
+          <div class="avatar-wrapper">
+            <img
+              :src="userStore.avatarUrl || 'https://via.placeholder.com/36'"
+              class="avatar"
+              alt="头像"
+            />
+            <!-- 弹窗 -->
+            <div class="popup">
+              <div class="popup-item">我的喜欢</div>
+              <div class="popup-item">我的收藏</div>
+              <div class="popup-item">观看历史</div>
+              <div class="popup-item">我的作品</div>
+              <div class="popup-divider"></div>
+              <div class="popup-item logout" @click="handleLogout">
+                退出登录
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="main-content">
+        <!-- 左侧菜单栏（以后放精选、推荐、关注等） -->
+        <aside class="side-menu">
+          <!-- 第一部分：发现 -->
+          <div class="menu-group">
+            <router-link to="/recommend" class="menu-item active">
+              <span class="menu-icon">📺</span>
+              <span>精选</span>
+            </router-link>
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">🔥</span>
+              <span>推荐</span>
+            </router-link>
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">🤖</span>
+              <span>AI抖音</span>
+            </router-link>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <!-- 第二部分：社交 -->
+          <div class="menu-group">
+            <router-link to="/follow" class="menu-item">
+              <span class="menu-icon">👥</span>
+              <span>关注</span>
+            </router-link>
+            <router-link to="/follow" class="menu-item">
+              <span class="menu-icon">👫</span>
+              <span>朋友</span>
+            </router-link>
+            <router-link to="/profile" class="menu-item">
+              <span class="menu-icon">👤</span>
+              <span>我的</span>
+            </router-link>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <!-- 第三部分：更多 -->
+          <div class="menu-group">
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">📡</span>
+              <span>直播</span>
+            </router-link>
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">🎬</span>
+              <span>放映厅</span>
+            </router-link>
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">🎭</span>
+              <span>短剧</span>
+            </router-link>
+            <router-link to="/recommend" class="menu-item">
+              <span class="menu-icon">🎮</span>
+              <span>小游戏</span>
+            </router-link>
+          </div>
+        </aside>
+
+        <!-- 右侧内容区，页面组件在这里切换 -->
+        <main class="content-area">
+          <router-view />
+        </main>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
-import { Swiper, SwiperSlide } from "swiper/vue";
-import { Navigation, Pagination, Mousewheel } from "swiper/modules";
-import "swiper/css";
-import { getVideos } from "./api/index.js";
 import LoginPage from "./LoginPage.vue";
 import { useUserStore } from "./stores/userStore.js";
+import { ref } from "vue";
 
-const modules = [Navigation, Pagination, Mousewheel];
-const videos = ref([]);
 const userStore = useUserStore();
-
-const videoRefs = {};
-const setVideoRef = (el, id) => {
-  if (el) videoRefs[id] = el;
-};
-
-let swiperInstance = null;
-let currentIndex = 0;
-
-const onSwiper = (swiper) => {
-  swiperInstance = swiper;
-  nextTick(() => playCurrentVideo());
-};
-
-const onSlideChange = (swiper) => {
-  Object.values(videoRefs).forEach((v) => v.pause());
-  currentIndex = swiper.activeIndex;
-  playCurrentVideo();
-};
-
-const playCurrentVideo = () => {
-  const videoList = videos.value;
-  if (videoList.length === 0) return;
-  const currentVideo = videoList[currentIndex];
-  const videoEl = videoRefs[currentVideo.id];
-  if (videoEl) {
-    videoEl.currentTime = 0;
-    videoEl.play().catch((err) => console.warn("自动播放失败：", err));
-  }
-};
-
-const handleLoaded = (id) => {
-  if (videos.value[currentIndex]?.id === id) {
-    playCurrentVideo();
-  }
-};
 
 const handleLogout = () => {
   userStore.logout();
 };
-
-onMounted(async () => {
-  try {
-    const response = await getVideos(1, 10);
-    videos.value = response.data.data.records;
-    nextTick(() => {
-      if (swiperInstance && videos.value.length > 0) {
-        playCurrentVideo();
-      }
-    });
-  } catch (error) {
-    console.error("请求视频列表失败：", error);
-  }
-});
 </script>
 
 <style scoped>
@@ -135,132 +148,211 @@ onMounted(async () => {
   width: 100%;
   height: 100vh;
   background-color: black;
-  overflow: hidden;
-  position: relative;
-}
-
-/* 顶部栏 */
-.top-bar {
-  position: absolute;
-  top: 20px;
-  left: 16px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  z-index: 100;
   color: white;
-  /* 防止顶部栏被 Swiper 盖住 */
-  pointer-events: none;
-}
-.top-bar > * {
-  pointer-events: auto;
 }
 
-.avatar {
-   width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  margin-right: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  object-fit: cover;
+/* 顶部导航栏 */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 56px;
+  border-bottom: 1px solid #333;
 }
 
-.username {
-  font-size: 16px;
-  font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+.logo {
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .logout-btn {
-   margin-left: auto;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 5px 14px;
-  border-radius: 20px; /* 圆角胶囊按钮 */
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
-  backdrop-filter: blur(10px); /* 毛玻璃效果 */
-  transition: all 0.2s;
 }
-
-.logout-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Swiper */
-.video-swiper {
-  width: 100%;
-  height: 100%;
-}
-
-.video-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
+/* 搜索框 */
+.search-box {
   display: flex;
-  justify-content: center;
   align-items: center;
+  background: #222;
+  border-radius: 20px;
+  padding: 6px 16px;
+  width: 300px;
 }
 
-.video-container video {
+.search-box input {
+  background: transparent;
+  border: none;
+  color: white;
+  outline: none;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background-color: black;
+  font-size: 13px;
 }
 
-/* 右侧互动按钮 */
-.actions {
-  position: absolute;
-  right: 16px;
-  bottom: 120px;
+.search-icon {
+  color: #999;
+  margin-left: 8px;
+}
+
+/* 右侧操作区 */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.action-item {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  z-index: 10;
-}
-
-.action-btn {
-  color: white;
-  font-size: 18px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  align-items: center;
   cursor: pointer;
-  user-select: none;
+  color: #ccc;
 }
 
-/* 底部标题 */
-.title {
+.action-icon {
+  font-size: 18px;
+}
+
+.action-text {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* 头像区域 */
+.avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+  /* 关键：增大悬停热区，让鼠标在头像和弹窗之间移动时不会触发离开 */
+  padding-bottom: 16px;
+  margin-bottom: -16px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 悬停弹窗 */
+.popup {
   position: absolute;
-  bottom: 40px;
-  left: 16px;
-  color: white;
-  font-size: 16px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  max-width: 70%;
-  z-index: 10;
-}
+  top: 44px;
+  right: 0;
+  background: #222;
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 160px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 200;
 
-/* 加载提示 */
-.loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 20px;
-}
+  /* 默认隐藏 */
+  opacity: 0;
+  visibility: hidden;
+  /* 给弹窗上方留 12px 的隐形桥接区域 */
+  padding-top: 12px;
+  margin-top: -12px;
 
-/* Swiper 滑动时的过渡动画 */
-.video-swiper .swiper-slide {
-  transition: opacity 0.3s ease;
+  /* 添加过渡动画 */
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
-.video-swiper .swiper-slide video {
-  transition: opacity 0.5s ease;
-}
-/* 确保即将进入的slide视频透明度正常 */
-.video-swiper .swiper-slide-active video {
+/* 鼠标悬停时显示弹窗 */
+.avatar-wrapper:hover .popup {
   opacity: 1;
+  visibility: visible;
+}
+
+/* 弹窗内部内容区域（去掉顶部留白的影响） */
+.popup-item:first-child {
+  margin-top: 0;
+}
+
+.popup-item {
+  padding: 10px 20px;
+  color: #ccc;
+  font-size: 14px;
+  cursor: pointer;
+  /* 确保文字区域不会被透明桥接区影响 */
+  position: relative;
+  z-index: 1;
+}
+
+.popup-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.popup-divider {
+  height: 1px;
+  background: #444;
+  margin: 4px 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.popup-item.logout {
+  color: #ff6b6b;
+}
+
+/* 主体区域：左侧菜单 + 右侧内容 */
+.main-content {
+  display: flex;
+  height: calc(100vh - 56px);
+}
+
+/* 左侧菜单栏 */
+.side-menu {
+  width: 200px;
+  border-right: 1px solid #333;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+/* 分割线 */
+.menu-divider {
+  height: 1px;
+  background-color: #333;
+  margin: 8px 12px;
+}
+
+/* 菜单项 */
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  color: #ccc;
+  text-decoration: none;
+  font-size: 14px;
+  border-radius: 0;
+  transition: background-color 0.15s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+/* 激活状态的菜单项 */
+.menu-item.router-link-active {
+  color: white;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* 菜单图标 */
+.menu-icon {
+  width: 24px;
+  margin-right: 10px;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* 右侧内容区 */
+.content-area {
+  flex: 1;
+  overflow: hidden;
 }
 </style>
