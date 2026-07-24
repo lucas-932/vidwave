@@ -8,6 +8,7 @@ class VidwaveServerApplicationTests {
 
     @Test
     void contextLoads() {
+
     }
 
 }
