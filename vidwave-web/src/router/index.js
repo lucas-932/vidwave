@@ -1,22 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-// 1. 在这里导入你未来的页面组件
-//    我们先从占位组件开始，让你的项目能跑通
 import RecommendPage from '../views/RecommendPage.vue'
 import FollowPage from '../views/FollowPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
+import PlaceholderPage from '../views/PlaceholderPage.vue'
+import UploadPage from '../views/UploadPage.vue'
 
-// 2. 定义路由规则：URL路径和组件的对应关系
 const routes = [
-  { path: '/', redirect: '/recommend' }, // 访问根路径，自动跳转到“推荐”页
+  { path: '/', redirect: '/recommend' },
   { path: '/recommend', component: RecommendPage },
   { path: '/follow', component: FollowPage },
   { path: '/profile', component: ProfilePage },
+  { path: '/upload', component: UploadPage },
+  // 新增占位路由
+  { path: '/featured', component: PlaceholderPage, props: { title: '精选' } },
+  { path: '/AiVidwave', component: PlaceholderPage, props: { title: 'AI微澜' } },
+  { path: '/friends', component: PlaceholderPage, props: { title: '朋友' } },
+  { path: '/live', component: PlaceholderPage, props: { title: '直播' } },
+  { path: '/cinema', component: PlaceholderPage, props: { title: '放映厅' } },
+  { path: '/drama', component: PlaceholderPage, props: { title: '短剧' } },
+  { path: '/games', component: PlaceholderPage, props: { title: '小游戏' } },
 ]
 
-// 3. 创建路由实例
 const router = createRouter({
-  history: createWebHistory(), // 使用HTML5 History模式，URL里没有‘#’号，更干净
+  history: createWebHistory(),
   routes,
 })
 

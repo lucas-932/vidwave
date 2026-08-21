@@ -19,36 +19,56 @@
         <!-- 右侧操作区 -->
         <div class="header-actions">
           <!-- 投稿按钮 -->
-          <div class="action-item">
+          <div class="action-item" @click="router.push('/upload')">
             <span class="action-icon">📤</span>
             <span class="action-text">投稿</span>
           </div>
-          <!-- 消息按钮 -->
-          <div class="action-item">
-            <span class="action-icon">💬</span>
-            <span class="action-text">消息</span>
+
+          <!-- 消息按钮 + 弹窗 -->
+          <div class="message-wrapper">
+            <div class="action-item" @click="showMessage = !showMessage">
+              <span class="action-icon">💬</span>
+              <span class="action-text">消息</span>
+            </div>
+
+            <!-- 消息弹窗 -->
+            <div class="message-panel" v-show="showMessage">
+              <MessagePopup @close="showMessage = false" />
+            </div>
           </div>
-          <!-- 通知按钮 -->
-          <div class="action-item">
+
+          <!-- 通知按钮 + 悬停弹窗 -->
+          <div
+            class="action-item notice-wrapper"
+            @mouseenter="showNoticePopup"
+            @mouseleave="hideNoticePopup"
+          >
             <span class="action-icon">🔔</span>
             <span class="action-text">通知</span>
+
+            <!-- 通知弹窗 -->
+            <div class="notice-popup" v-show="showNotice">
+              <div class="notice-item">💬 有 3 条新评论</div>
+              <div class="notice-item">👍 你的视频被赞了</div>
+              <div class="notice-item">👥 新粉丝关注了你</div>
+            </div>
           </div>
 
           <!-- 头像 + 悬停弹窗 -->
-          <div class="avatar-wrapper">
+          <div class="avatar-wrapper" @click="goProfile">
             <img
               :src="userStore.avatarUrl || 'https://via.placeholder.com/36'"
               class="avatar"
               alt="头像"
             />
-            <!-- 弹窗 -->
+            <!-- 悬停弹窗 -->
             <div class="popup">
               <div class="popup-item">我的喜欢</div>
               <div class="popup-item">我的收藏</div>
               <div class="popup-item">观看历史</div>
               <div class="popup-item">我的作品</div>
               <div class="popup-divider"></div>
-              <div class="popup-item logout" @click="handleLogout">
+              <div class="popup-item logout" @click.stop="handleLogout">
                 退出登录
               </div>
             </div>
@@ -61,7 +81,7 @@
         <aside class="side-menu">
           <!-- 第一部分：发现 -->
           <div class="menu-group">
-            <router-link to="/recommend" class="menu-item active">
+            <router-link to="/featured" class="menu-item active">
               <span class="menu-icon">📺</span>
               <span>精选</span>
             </router-link>
@@ -69,9 +89,9 @@
               <span class="menu-icon">🔥</span>
               <span>推荐</span>
             </router-link>
-            <router-link to="/recommend" class="menu-item">
+            <router-link to="/AiVidwave" class="menu-item">
               <span class="menu-icon">🤖</span>
-              <span>AI抖音</span>
+              <span>AI微澜</span>
             </router-link>
           </div>
 
@@ -83,7 +103,7 @@
               <span class="menu-icon">👥</span>
               <span>关注</span>
             </router-link>
-            <router-link to="/follow" class="menu-item">
+            <router-link to="/friends" class="menu-item">
               <span class="menu-icon">👫</span>
               <span>朋友</span>
             </router-link>
@@ -97,19 +117,19 @@
 
           <!-- 第三部分：更多 -->
           <div class="menu-group">
-            <router-link to="/recommend" class="menu-item">
+            <router-link to="/live" class="menu-item">
               <span class="menu-icon">📡</span>
               <span>直播</span>
             </router-link>
-            <router-link to="/recommend" class="menu-item">
+            <router-link to="/cinema" class="menu-item">
               <span class="menu-icon">🎬</span>
               <span>放映厅</span>
             </router-link>
-            <router-link to="/recommend" class="menu-item">
+            <router-link to="/drama" class="menu-item">
               <span class="menu-icon">🎭</span>
               <span>短剧</span>
             </router-link>
-            <router-link to="/recommend" class="menu-item">
+            <router-link to="/games" class="menu-item">
               <span class="menu-icon">🎮</span>
               <span>小游戏</span>
             </router-link>
@@ -126,14 +146,40 @@
 </template>
 
 <script setup>
-import LoginPage from "./LoginPage.vue";
-import { useUserStore } from "./stores/userStore.js";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import LoginPage from "./LoginPage.vue";
+import MessagePopup from "./views/MessagePopup.vue";
+import { useUserStore } from "./stores/userStore.js";
 
+const router = useRouter();
 const userStore = useUserStore();
+
+// 通知弹窗状态
+const showNotice = ref(false);
+let noticeTimer = null;
+
+// 消息弹窗状态
+const showMessage = ref(false);
 
 const handleLogout = () => {
   userStore.logout();
+  router.push("/");
+};
+
+const goProfile = () => {
+  router.push("/profile");
+};
+
+const showNoticePopup = () => {
+  clearTimeout(noticeTimer);
+  showNotice.value = true;
+};
+
+const hideNoticePopup = () => {
+  noticeTimer = setTimeout(() => {
+    showNotice.value = false;
+  }, 300); // 延迟300毫秒消失
 };
 </script>
 
@@ -354,5 +400,52 @@ const handleLogout = () => {
 .content-area {
   flex: 1;
   overflow: hidden;
+}
+
+/* 通知弹窗 */
+.notice-wrapper {
+  position: relative;
+}
+
+.notice-popup {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  background: #222;
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+}
+
+.notice-item {
+  padding: 10px 16px;
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.notice-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+/* 头像可点击 */
+.avatar-wrapper {
+  cursor: pointer;
+}
+
+/* 消息按钮容器 */
+.message-wrapper {
+  position: relative;
+}
+
+/* 消息面板定位在按钮正下方 */
+.message-panel {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  z-index: 300;
 }
 </style>
