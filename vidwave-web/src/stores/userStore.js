@@ -2,33 +2,36 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
-  // 状态：用户信息和 Token
   const token = ref(localStorage.getItem('token') || '')
   const username = ref(localStorage.getItem('username') || '')
   const avatarUrl = ref(localStorage.getItem('avatarUrl') || '')
+  const userId = ref(localStorage.getItem('userId') || '')
 
-  // 是否已登录
   const isLoggedIn = () => {
     return token.value !== ''
   }
 
-  // 登录成功，保存信息
-  const setLoginInfo = (newToken, newUsername) => {
+  const setLoginInfo = (newToken, newUsername, newAvatarUrl, newUserId) => {
     token.value = newToken
     username.value = newUsername
+    avatarUrl.value = newAvatarUrl || ''
+    userId.value = newUserId || ''
     localStorage.setItem('token', newToken)
     localStorage.setItem('username', newUsername)
-    avatarUrl.value = newAvatarUrl || ''
     localStorage.setItem('avatarUrl', newAvatarUrl || '')
+    localStorage.setItem('userId', newUserId || '')
   }
 
-  // 退出登录
   const logout = () => {
     token.value = ''
     username.value = ''
+    avatarUrl.value = ''
+    userId.value = ''
     localStorage.removeItem('token')
     localStorage.removeItem('username')
+    localStorage.removeItem('avatarUrl')
+    localStorage.removeItem('userId')
   }
 
-  return { token, username, isLoggedIn, setLoginInfo, logout }
+  return { token, username, avatarUrl, userId, isLoggedIn, setLoginInfo, logout }
 })

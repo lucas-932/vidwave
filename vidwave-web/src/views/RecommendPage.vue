@@ -26,7 +26,12 @@
           />
 
           <div class="actions">
-            <div class="action-btn">❤️ {{ video.likeCount }}</div>
+            <div class="action-btn" @click="toggleLike(video)">
+              <span :style="{ color: video.isLiked ? '#ff4d4f' : 'white' }"
+                >❤️</span
+              >
+              {{ video.likeCount }}
+            </div>
             <div class="action-btn">💬 {{ video.commentCount }}</div>
             <div class="action-btn">🔗 0</div>
           </div>
@@ -45,9 +50,12 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import { getVideos } from "../api/index.js";
+import { useUserStore } from "../stores/userStore.js";
+import axios from "axios";
 
 const modules = [Navigation, Pagination, Mousewheel];
 const videos = ref([]);
+const userStore = useUserStore();
 
 const videoRefs = {};
 const setVideoRef = (el, id) => {
@@ -85,10 +93,49 @@ const handleLoaded = (id) => {
   }
 };
 
+// 获取点赞状态（在获取视频列表后调用）
+const fetchLikeStatus = async () => {
+  for (const video of videos.value) {
+    try {
+      const res = await axios.get("http://localhost:8080/api/like/status", {
+        params: { userId: userStore.userId, videoId: video.id },
+      });
+      video.isLiked = res.data.isLiked;
+      video.likeCount = res.data.likeCount;
+    } catch (e) {
+      console.error("获取点赞状态失败", e);
+    }
+  }
+};
+
+// 点赞/取消点赞
+const toggleLike = async (video) => {
+  try {
+    const res = await axios.post("http://localhost:8080/api/like/toggle", {
+      userId: userStore.userId,
+      videoId: video.id,
+    });
+    if (res.data.code === 200) {
+      video.isLiked = res.data.isLiked;
+      // 根据结果加减
+      if (res.data.isLiked) {
+        video.likeCount++;
+      } else {
+        video.likeCount--;
+      }
+    }
+  } catch (e) {
+    console.error("点赞失败", e);
+  }
+};
+
 onMounted(async () => {
   try {
     const response = await getVideos(1, 10);
     videos.value = response.data.data.records;
+
+    await fetchLikeStatus(); // 新增
+
     nextTick(() => {
       if (swiperInstance && videos.value.length > 0) {
         playCurrentVideo();

@@ -57,7 +57,7 @@
           <!-- 头像 + 悬停弹窗 -->
           <div class="avatar-wrapper" @click="goProfile">
             <img
-              :src="userStore.avatarUrl || 'https://via.placeholder.com/36'"
+              :src="userStore.avatarUrl || '/default-avatar.svg/36'"
               class="avatar"
               alt="头像"
             />

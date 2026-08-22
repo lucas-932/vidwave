@@ -3,7 +3,7 @@
     <!-- 头像 + 昵称 -->
     <div class="profile-header">
       <img
-        :src="userStore.avatarUrl || 'https://via.placeholder.com/80'"
+        :src="userStore.avatarUrl || '/default-avatar.svg/80'"
         class="profile-avatar"
         alt="头像"
       />

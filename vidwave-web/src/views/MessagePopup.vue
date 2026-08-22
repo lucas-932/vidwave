@@ -51,7 +51,7 @@ const chatList = [
   {
     id: 1,
     name: "微澜小助手",
-    avatar: "https://via.placeholder.com/40",
+    avatar: "/default-avatar.svg/40",
     preview: "欢迎来到微澜！",
     messages: [
       { from: "other", text: "欢迎来到微澜！" },
@@ -61,7 +61,7 @@ const chatList = [
   {
     id: 2,
     name: "系统通知",
-    avatar: "https://via.placeholder.com/40",
+    avatar: "/default-avatar.svg/40",
     preview: "你的视频通过了审核",
     messages: [{ from: "other", text: "你的视频《测试视频》已通过审核。" }],
   },

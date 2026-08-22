@@ -106,6 +106,7 @@ public class UserController {
         result.put("message", "登录成功");
         result.put("token", token);
         result.put("avatarUrl", existUser.getAvatarUrl());
+        result.put("userId", existUser.getId());
         return result;
     }
 

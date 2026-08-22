@@ -117,7 +117,8 @@ const handleSubmit = async () => {
         userStore.setLoginInfo(
           response.data.token,
           username.value,
-          response.data.avatarUrl
+          response.data.avatarUrl,
+          response.data.userId
         );
       }
     } else {
