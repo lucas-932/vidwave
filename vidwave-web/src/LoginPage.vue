@@ -2,9 +2,9 @@
   <div class="login-container">
     <div class="login-card">
       <h1>微澜 VidWave</h1>
-      <p class="subtitle">{{ isRegister ? '注册新账号' : '登录你的账号' }}</p>
+      <p class="subtitle">{{ isRegister ? "注册新账号" : "登录你的账号" }}</p>
 
-      <!-- 用户名输入框 -->
+      <!-- 用户名 -->
       <input
         v-model="username"
         type="text"
@@ -12,7 +12,7 @@
         class="input"
       />
 
-      <!-- 密码输入框 -->
+      <!-- 密码 -->
       <input
         v-model="password"
         type="password"
@@ -20,16 +20,29 @@
         class="input"
       />
 
+      <!-- 验证码 -->
+      <div class="captcha-row">
+        <input
+          v-model="captchaAnswer"
+          type="number"
+          placeholder="验证码答案"
+          class="input captcha-input"
+        />
+        <span class="captcha-question" @click="refreshCaptcha">
+          {{ captchaQuestion }}
+        </span>
+      </div>
+
       <!-- 登录/注册按钮 -->
       <button @click="handleSubmit" class="btn">
-        {{ isRegister ? '注册' : '登录' }}
+        {{ isRegister ? "注册" : "登录" }}
       </button>
 
       <!-- 切换登录/注册 -->
       <p class="switch-text">
-        {{ isRegister ? '已有账号？' : '没有账号？' }}
+        {{ isRegister ? "已有账号？" : "没有账号？" }}
         <span @click="isRegister = !isRegister" class="switch-link">
-          {{ isRegister ? '去登录' : '去注册' }}
+          {{ isRegister ? "去登录" : "去注册" }}
         </span>
       </p>
 
@@ -40,54 +53,82 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import axios from 'axios'
-import { useUserStore } from './stores/userStore.js'
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { useUserStore } from "./stores/userStore.js";
 
-const username = ref('')
-const password = ref('')
-const isRegister = ref(false)  // true=注册模式, false=登录模式
-const message = ref('')
+const username = ref("");
+const password = ref("");
+const captchaKey = ref("");
+const captchaQuestion = ref("点击获取验证码");
+const captchaAnswer = ref("");
+const isRegister = ref(false);
+const message = ref("");
 
-const userStore = useUserStore()
+const userStore = useUserStore();
+
+// 获取验证码
+const refreshCaptcha = async () => {
+  try {
+    const res = await axios.get("http://localhost:8080/api/captcha/generate");
+    if (res.data.code === 200) {
+      captchaKey.value = res.data.captchaKey;
+      captchaQuestion.value = res.data.question;
+    }
+  } catch (error) {
+    message.value = "验证码获取失败，请重试";
+    console.error(error);
+  }
+};
+
+// 页面加载时自动获取一次
+onMounted(() => {
+  refreshCaptcha();
+});
 
 const handleSubmit = async () => {
-  // 简单校验
   if (!username.value || !password.value) {
-    message.value = '用户名和密码不能为空'
-    return
+    message.value = "用户名和密码不能为空";
+    return;
+  }
+  if (!captchaAnswer.value) {
+    message.value = "请输入验证码答案";
+    return;
   }
 
-  // 根据模式选择接口地址
   const url = isRegister.value
-    ? 'http://localhost:8080/api/user/register'
-    : 'http://localhost:8080/api/user/login'
+    ? "http://localhost:8080/api/user/register"
+    : "http://localhost:8080/api/user/login";
 
   try {
     const response = await axios.post(url, {
       username: username.value,
-      password: password.value
-    })
+      password: password.value,
+      captchaKey: captchaKey.value,
+      captchaAnswer: parseInt(captchaAnswer.value),
+    });
 
     if (response.data.code === 200) {
       if (isRegister.value) {
-        // 注册成功，切换到登录模式
-        message.value = '注册成功，请登录'
-        isRegister.value = false
+        message.value = "注册成功，请登录";
+        isRegister.value = false;
+        refreshCaptcha();
       } else {
-        // 登录成功，保存 Token 和用户名
-        userStore.setLoginInfo(response.data.token, username.value)
-        message.value = ''
-        // 不需要手动跳转，App.vue 会自动切换页面
+        userStore.setLoginInfo(
+          response.data.token,
+          username.value,
+          response.data.avatarUrl
+        );
       }
     } else {
-      message.value = response.data.message
+      message.value = response.data.message;
+      refreshCaptcha(); // 验证码错误后刷新
     }
   } catch (error) {
-    message.value = '网络错误，请重试'
-    console.error(error)
+    message.value = "网络错误，请重试";
+    console.error(error);
   }
-}
+};
 </script>
 
 <style scoped>
@@ -128,6 +169,35 @@ h1 {
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
+}
+
+/* 验证码行 */
+.captcha-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.captcha-input {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.captcha-question {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+
+.captcha-question:hover {
+  background: #e0e0e0;
 }
 
 .btn {

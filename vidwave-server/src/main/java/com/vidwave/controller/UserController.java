@@ -22,26 +22,48 @@ public class UserController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private CaptchaController captchaController;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody User user) {
+    public Map<String, Object> register(@RequestBody Map<String, Object> body) {
         Map<String, Object> result = new HashMap<>();
 
-        // 1. 检查用户名是否已存在
+        // 1. 验证码校验（新增）
+        String captchaKey = (String) body.get("captchaKey");
+        int captchaAnswer = body.get("captchaAnswer") == null ? -1 : Integer.parseInt(body.get("captchaAnswer").toString());
+        if (!captchaController.verify(captchaKey, captchaAnswer)) {
+            result.put("code", 400);
+            result.put("message", "验证码错误或已过期");
+            return result;
+        }
+
+        // 2. 检查用户名密码是否为空（新增）
+        String username = (String) body.get("username");
+        String password = (String) body.get("password");
+        if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
+            result.put("code", 400);
+            result.put("message", "用户名和密码不能为空");
+            return result;
+        }
+
+        // 3. 检查用户名是否已存在（保留）
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUsername, user.getUsername());
-        User existUser = userMapper.selectOne(wrapper);
-        if (existUser != null) {
+        wrapper.eq(User::getUsername, username);
+        if (userMapper.selectOne(wrapper) != null) {
             result.put("code", 400);
             result.put("message", "用户名已存在");
             return result;
         }
 
-        // 2.密码加密
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        // 4. 密码加密（保留）
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
 
-        // 3.存入数据库
+        // 5. 存入数据库（保留）
         userMapper.insert(user);
 
         result.put("code", 200);
