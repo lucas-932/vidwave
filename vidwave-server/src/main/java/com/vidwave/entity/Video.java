@@ -18,4 +18,6 @@ public class Video {
     private Integer likeCount;
     private Integer commentCount;
     private LocalDateTime createTime;
+    private String tags;
+    private Long userId;
 }

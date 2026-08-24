@@ -2,11 +2,21 @@
   <div class="profile-page">
     <!-- 头像 + 昵称 -->
     <div class="profile-header">
-      <img
-        :src="userStore.avatarUrl || '/default-avatar.svg/80'"
-        class="profile-avatar"
-        alt="头像"
-      />
+      <div class="avatar-upload" @click="triggerAvatarUpload">
+        <img
+          :src="userStore.avatarUrl || '/default-avatar.svg'"
+          class="profile-avatar"
+          alt="头像"
+        />
+        <div class="avatar-overlay">更换头像</div>
+        <input
+          type="file"
+          accept="image/*"
+          @change="handleAvatarChange"
+          hidden
+          ref="avatarInput"
+        />
+      </div>
       <h2 class="profile-username">{{ userStore.username }}</h2>
     </div>
 
@@ -56,10 +66,53 @@
 
 <script setup>
 import { ref } from "vue";
+import axios from "axios";
 import { useUserStore } from "../stores/userStore.js";
 
 const userStore = useUserStore();
 const currentTab = ref("works");
+const avatarInput = ref(null);
+
+// 触发文件选择器
+const triggerAvatarUpload = () => {
+  avatarInput.value.click();
+};
+
+// 处理头像上传
+const handleAvatarChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("userId", userStore.userId);
+
+  try {
+    const res = await axios.post(
+      "http://localhost:8080/api/upload/avatar",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    if (res.data.code === 200) {
+      // 更新 Pinia 状态
+      userStore.avatarUrl = res.data.avatarUrl;
+      // 同步更新 localStorage
+      localStorage.setItem("avatarUrl", res.data.avatarUrl);
+      alert("头像上传成功！");
+    } else {
+      alert(res.data.message);
+    }
+  } catch (e) {
+    console.error("头像上传失败", e);
+    alert("头像上传失败，请重试");
+  } finally {
+    // 清空文件选择器，下次选择同一文件也能触发 change
+    event.target.value = "";
+  }
+};
 </script>
 
 <style scoped>
@@ -76,13 +129,45 @@ const currentTab = ref("works");
   margin-bottom: 24px;
 }
 
+/* 头像上传容器 */
+.avatar-upload {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
 .profile-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
   object-fit: cover;
-  margin-bottom: 12px;
+  display: block;
+}
+
+/* 悬停遮罩 */
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.avatar-upload:hover .avatar-overlay {
+  opacity: 1;
 }
 
 .profile-username {
