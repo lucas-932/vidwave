@@ -141,11 +141,9 @@ const handleUpload = async () => {
   message.value = "";
 
   try {
-    const res = await axios.post(
-      "http://localhost:8080/api/upload/video",
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
+    const res = await axios.post("/api/upload/video", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
     if (res.data.code === 200) {
       message.value = "上传成功！";

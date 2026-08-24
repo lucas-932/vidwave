@@ -70,7 +70,7 @@ const userStore = useUserStore();
 // 获取验证码
 const refreshCaptcha = async () => {
   try {
-    const res = await axios.get("http://localhost:8080/api/captcha/generate");
+    const res = await axios.get("/api/captcha/generate");
     if (res.data.code === 200) {
       captchaKey.value = res.data.captchaKey;
       captchaQuestion.value = res.data.question;
@@ -96,9 +96,7 @@ const handleSubmit = async () => {
     return;
   }
 
-  const url = isRegister.value
-    ? "http://localhost:8080/api/user/register"
-    : "http://localhost:8080/api/user/login";
+  const url = isRegister.value ? "/api/user/register" : "/api/user/login";
 
   try {
     const response = await axios.post(url, {

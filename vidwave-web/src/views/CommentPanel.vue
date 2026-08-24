@@ -52,7 +52,7 @@ const userStore = useUserStore();
 
 const fetchComments = async () => {
   try {
-    const res = await axios.get("http://localhost:8080/api/comment/list", {
+    const res = await axios.get("/api/comment/list", {
       params: { videoId: props.videoId },
     });
     if (res.data.code === 200) {
@@ -83,7 +83,7 @@ const submitComment = async () => {
   }
 
   try {
-    const res = await axios.post("http://localhost:8080/api/comment/add", {
+    const res = await axios.post("/api/comment/add", {
       videoId: props.videoId,
       userId: userStore.userId,
       content: newComment.value,

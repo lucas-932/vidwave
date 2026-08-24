@@ -88,13 +88,9 @@ const handleAvatarChange = async (event) => {
   formData.append("userId", userStore.userId);
 
   try {
-    const res = await axios.post(
-      "http://localhost:8080/api/upload/avatar",
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
-    );
+    const res = await axios.post("/api/upload/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
     if (res.data.code === 200) {
       // 更新 Pinia 状态

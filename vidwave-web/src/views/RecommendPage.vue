@@ -146,7 +146,7 @@ const handleLoaded = (id) => {
 const fetchFollowStatus = async () => {
   for (const video of videos.value) {
     try {
-      const res = await axios.get("http://localhost:8080/api/follow/status", {
+      const res = await axios.get("/api/follow/status", {
         params: { userId: userStore.userId, authorId: video.id }, // 暂时用 video.id 模拟作者ID
       });
       video.isFollowed = res.data.isFollowed;
@@ -160,7 +160,7 @@ const fetchFollowStatus = async () => {
 const fetchLikeStatus = async () => {
   for (const video of videos.value) {
     try {
-      const res = await axios.get("http://localhost:8080/api/like/status", {
+      const res = await axios.get("/api/like/status", {
         params: { userId: userStore.userId, videoId: video.id },
       });
       video.isLiked = res.data.isLiked;
@@ -184,7 +184,7 @@ const addMockAuthor = () => {
 // 点赞/取消点赞
 const toggleLike = async (video) => {
   try {
-    const res = await axios.post("http://localhost:8080/api/like/toggle", {
+    const res = await axios.post("/api/like/toggle", {
       userId: userStore.userId,
       videoId: video.id,
     });
@@ -205,7 +205,7 @@ const toggleLike = async (video) => {
 // 关注/取关
 const toggleFollow = async (video) => {
   try {
-    const res = await axios.post("http://localhost:8080/api/follow/toggle", {
+    const res = await axios.post("/api/follow/toggle", {
       userId: userStore.userId,
       authorId: video.id, // 暂时用 video.id 作为作者ID
     });
