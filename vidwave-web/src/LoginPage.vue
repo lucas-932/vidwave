@@ -91,7 +91,9 @@ const handleSubmit = async () => {
     message.value = "用户名和密码不能为空";
     return;
   }
-  if (!captchaAnswer.value) {
+  const answer = String(captchaAnswer.value).trim();
+
+  if (!answer) {
     message.value = "请输入验证码答案";
     return;
   }
@@ -103,7 +105,7 @@ const handleSubmit = async () => {
       username: username.value,
       password: password.value,
       captchaKey: captchaKey.value,
-      captchaAnswer: parseInt(captchaAnswer.value),
+      captchaAnswer: parseInt(answer),
     });
 
     if (response.data.code === 200) {
@@ -137,11 +139,11 @@ const handleSubmit = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #111;
 }
 
 .login-card {
-  background: white;
+  background: #1e1e1e;
   padding: 40px 30px;
   border-radius: 12px;
   width: 320px;
@@ -151,11 +153,11 @@ const handleSubmit = async () => {
 
 h1 {
   margin: 0 0 5px;
-  color: #333;
+  color: white;
 }
 
 .subtitle {
-  color: #888;
+  color: #999;
   font-size: 14px;
   margin-bottom: 25px;
 }
@@ -164,10 +166,13 @@ h1 {
   width: 100%;
   padding: 12px;
   margin-bottom: 15px;
-  border: 1px solid #ddd;
+  background: #2a2a2a;
+  border: 1px solid #444;
   border-radius: 6px;
   font-size: 14px;
+  color: white;
   box-sizing: border-box;
+  outline: none;
 }
 
 /* 验证码行 */
@@ -187,22 +192,22 @@ h1 {
   align-items: center;
   justify-content: center;
   width: 110px;
-  background: #f0f0f0;
+  background: #2a2a2a;
   border-radius: 6px;
   font-size: 14px;
-  color: #333;
+  color: #e9dede;
   cursor: pointer;
   user-select: none;
 }
 
 .captcha-question:hover {
-  background: #e0e0e0;
+  background: #434040;
 }
 
 .btn {
   width: 100%;
   padding: 12px;
-  background: #667eea;
+  background: #5968ba;
   color: white;
   border: none;
   border-radius: 6px;
@@ -218,7 +223,7 @@ h1 {
 .switch-text {
   margin-top: 20px;
   font-size: 14px;
-  color: #888;
+  color: #999;
 }
 
 .switch-link {
@@ -233,7 +238,7 @@ h1 {
 
 .message {
   margin-top: 15px;
-  color: #e74c3c;
+  color: #ff6b6b;
   font-size: 14px;
 }
 </style>

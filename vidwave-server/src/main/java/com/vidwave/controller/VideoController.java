@@ -1,6 +1,7 @@
 package com.vidwave.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.vidwave.entity.Video;
 import com.vidwave.mapper.VideoMapper;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -31,5 +33,21 @@ public class VideoController {
         map.put("message", "success");
         map.put("data", result);
         return map;
+    }
+
+    @GetMapping("/videos/my")
+    public Map<String, Object> myVideos(@RequestParam Long userId) {
+        Map<String, Object> result = new HashMap<>();
+
+        LambdaQueryWrapper<Video> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Video::getUserId, userId)
+                .orderByDesc(Video::getCreateTime);
+
+        List<Video> videos = videoMapper.selectList(wrapper);
+
+        result.put("code", 200);
+        result.put("message", "success");
+        result.put("data", videos);
+        return result;
     }
 }

@@ -4,6 +4,8 @@ import FollowPage from '../views/FollowPage.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import PlaceholderPage from '../views/PlaceholderPage.vue'
 import UploadPage from '../views/UploadPage.vue'
+import UserPage from '../views/UserPage.vue'
+import UserWorksPlayer from '../views/UserWorksPlayer.vue'
 
 const routes = [
   { path: '/', redirect: '/recommend' },
@@ -19,6 +21,8 @@ const routes = [
   { path: '/cinema', component: PlaceholderPage, props: { title: '放映厅' } },
   { path: '/drama', component: PlaceholderPage, props: { title: '短剧' } },
   { path: '/games', component: PlaceholderPage, props: { title: '小游戏' } },
+  { path: '/user/:id', component: UserPage },
+  { path: '/works', component: UserWorksPlayer }
 ]
 
 const router = createRouter({

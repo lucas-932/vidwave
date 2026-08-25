@@ -24,8 +24,16 @@
               webkit-playsinline
               preload="metadata"
               @loadedmetadata="handleLoaded(video.id)"
+              @click="togglePlay(video)"
             />
-
+            <!-- 播放状态图标（暂停时显示播放图标） -->
+            <div
+              v-if="!video.isPlaying"
+              class="play-overlay"
+              @click.stop="togglePlay(video)"
+            >
+              <span class="play-icon">▶</span>
+            </div>
             <!-- 右侧操作栏 -->
             <div class="actions">
               <!-- 作者头像 + 关注按钮 -->
@@ -34,6 +42,8 @@
                   :src="video.author?.avatar || '/default-avatar.svg'"
                   class="author-avatar"
                   alt="作者头像"
+                  @click="goToUserPage(video)"
+                  style="cursor: pointer"
                 />
                 <div
                   class="follow-btn"
@@ -41,6 +51,9 @@
                   @click.stop="toggleFollow(video)"
                 >
                   {{ video.isFollowed ? "✓" : "+" }}
+                </div>
+                <div class="author-name">
+                  {{ video.author?.name || "用户" }}
                 </div>
               </div>
 
@@ -63,7 +76,25 @@
                 <span class="action-num">分享</span>
               </div>
             </div>
-            <div class="title">{{ video.title }}</div>
+            <div class="video-info">
+              <!-- 标题 -->
+              <div class="title">{{ video.title }}</div>
+
+              <!-- 标签 -->
+              <div v-if="video.tags" class="tags">
+                <span
+                  v-for="tag in video.tags.split(',')"
+                  :key="tag"
+                  class="tag"
+                  @click="handleTagClick(tag)"
+                >
+                  #{{ tag }}
+                </span>
+              </div>
+
+              <!-- 发布时间 -->
+              <div class="time">{{ formatTime(video.createTime) }}</div>
+            </div>
           </div>
         </swiper-slide>
       </swiper>
@@ -82,7 +113,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Navigation, Pagination, Mousewheel } from "swiper/modules";
 import "swiper/css";
@@ -90,12 +120,19 @@ import { getVideos } from "../api/index.js";
 import { useUserStore } from "../stores/userStore.js";
 import axios from "axios";
 import CommentPanel from "./CommentPanel.vue";
+import { useRouter } from "vue-router";
+import { ref, onMounted, onActivated, nextTick } from "vue";
+
+defineOptions({
+  name: "RecommendPage",
+});
 
 const modules = [Navigation, Pagination, Mousewheel];
 const videos = ref([]);
 const userStore = useUserStore();
 const showComments = ref(false);
 const activeVideoId = ref(null);
+const router = useRouter();
 
 const videoRefs = {};
 const setVideoRef = (el, id) => {
@@ -105,6 +142,12 @@ const setVideoRef = (el, id) => {
 let swiperInstance = null;
 let currentIndex = 0;
 
+const goToUserPage = (video) => {
+  if (video.userId) {
+    router.push(`/user/${video.userId}`);
+  }
+};
+
 const onSwiper = (swiper) => {
   swiperInstance = swiper;
   nextTick(() => playCurrentVideo());
@@ -112,7 +155,17 @@ const onSwiper = (swiper) => {
 
 const onSlideChange = (swiper) => {
   Object.values(videoRefs).forEach((v) => v.pause());
+  videos.value.forEach((v) => (v.isPlaying = false));
+
   currentIndex = swiper.activeIndex;
+
+  // 当前视频从头播放
+  const currentVideo = videos.value[currentIndex];
+  if (currentVideo) {
+    currentVideo.isPlaying = true;
+    const videoEl = videoRefs[currentVideo.id];
+    if (videoEl) videoEl.currentTime = 0;
+  }
 
   // 如果评论区开着，更新当前视频ID
   if (showComments.value) {
@@ -131,7 +184,6 @@ const playCurrentVideo = () => {
   const currentVideo = videoList[currentIndex];
   const videoEl = videoRefs[currentVideo.id];
   if (videoEl) {
-    videoEl.currentTime = 0;
     videoEl.play().catch((err) => console.warn("自动播放失败：", err));
   }
 };
@@ -147,7 +199,7 @@ const fetchFollowStatus = async () => {
   for (const video of videos.value) {
     try {
       const res = await axios.get("/api/follow/status", {
-        params: { userId: userStore.userId, authorId: video.id }, // 暂时用 video.id 模拟作者ID
+        params: { userId: userStore.userId, authorId: video.userId },
       });
       video.isFollowed = res.data.isFollowed;
     } catch (e) {
@@ -171,14 +223,41 @@ const fetchLikeStatus = async () => {
   }
 };
 
-// 给视频补充模拟作者信息
-const addMockAuthor = () => {
-  videos.value.forEach((video) => {
-    video.author = {
-      name: "用户" + video.id,
-      avatar: "/default-avatar.svg",
-    };
-  });
+const fetchAuthors = async () => {
+  for (const video of videos.value) {
+    if (video.userId) {
+      try {
+        const res = await axios.get(`/api/user/${video.userId}`);
+        if (res.data.code === 200) {
+          video.author = {
+            name: res.data.data.username,
+            avatar: res.data.data.avatarUrl || "/default-avatar.svg",
+          };
+        }
+      } catch (e) {
+        console.error("获取作者信息失败", e);
+      }
+    } else {
+      video.author = {
+        name: "未知用户",
+        avatar: "/default-avatar.svg",
+      };
+    }
+  }
+};
+
+//点击暂定/播放视频
+const togglePlay = (video) => {
+  const videoEl = videoRefs[video.id];
+  if (!videoEl) return;
+
+  if (videoEl.paused) {
+    videoEl.play().catch((err) => console.warn("播放失败：", err));
+    video.isPlaying = true;
+  } else {
+    videoEl.pause();
+    video.isPlaying = false;
+  }
 };
 
 // 点赞/取消点赞
@@ -207,7 +286,7 @@ const toggleFollow = async (video) => {
   try {
     const res = await axios.post("/api/follow/toggle", {
       userId: userStore.userId,
-      authorId: video.id, // 暂时用 video.id 作为作者ID
+      authorId: video.userId,
     });
     if (res.data.code === 200) {
       video.isFollowed = res.data.isFollowed;
@@ -215,6 +294,27 @@ const toggleFollow = async (video) => {
   } catch (e) {
     console.error("关注失败", e);
   }
+};
+
+// 点击标签（以后跳转到搜索页）
+const handleTagClick = (tag) => {
+  console.log("点击了标签：" + tag);
+  // 以后这里写：router.push('/search?keyword=' + tag)
+};
+
+// 格式化发布时间
+const formatTime = (dateStr) => {
+  if (!dateStr) return "";
+
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000);
+
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return Math.floor(diff / 60) + "分钟前";
+  if (diff < 86400) return Math.floor(diff / 3600) + "小时前";
+  if (diff < 2592000) return Math.floor(diff / 86400) + "天前";
+  return date.toLocaleDateString();
 };
 
 // 打开评论区
@@ -235,8 +335,12 @@ onMounted(async () => {
     const response = await getVideos(1, 10);
     videos.value = response.data.data.records;
 
-    // 补充模拟作者信息
-    addMockAuthor();
+    // 给每个视频添加播放状态
+    videos.value.forEach((v) => {
+      v.isPlaying = true; // 默认自动播放，设为播放中
+    });
+
+    await fetchAuthors();
 
     await fetchLikeStatus(); // 新增
 
@@ -250,6 +354,12 @@ onMounted(async () => {
   } catch (error) {
     console.error("请求视频列表失败：", error);
   }
+});
+
+onActivated(() => {
+  nextTick(() => {
+    playCurrentVideo();
+  });
 });
 </script>
 
@@ -345,8 +455,10 @@ onMounted(async () => {
 
 /* 作者头像区域 */
 .author-area {
-  position: relative;
-  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
 .author-avatar {
@@ -355,16 +467,23 @@ onMounted(async () => {
   border-radius: 50%;
   border: 2px solid white;
   object-fit: cover;
+  cursor: pointer;
+}
+.author-name {
+  color: white;
+  font-size: 11px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 关注按钮 */
 .follow-btn {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #ff4d4f;
   color: white;
@@ -375,10 +494,24 @@ onMounted(async () => {
   justify-content: center;
   cursor: pointer;
   user-select: none;
+  flex-shrink: 0;
+
+  /* 关键：让按钮向上压住头像底部 */
+  margin-top: -18px;
+  border: 1.5px solid #111; /* 和背景同色，看起来像被头像切了一刀 */
+  z-index: 2;
 }
 
 .follow-btn.followed {
   background: #666;
+}
+
+.author-name {
+  color: white;
+  font-size: 11px;
+  margin-top: 4px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* 操作按钮 */
@@ -398,16 +531,46 @@ onMounted(async () => {
   color: #ccc;
 }
 
-/* 底部标题 */
-.title {
+/* 底部 */
+.video-info {
   position: absolute;
   bottom: 40px;
   left: 16px;
+  z-index: 10;
+  max-width: 70%;
+}
+
+.title {
   color: white;
   font-size: 16px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  max-width: 70%;
-  z-index: 10;
+  margin-bottom: 6px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tag {
+  color: rgba(255, 255, 255, 0.75); /* 半透明白，不抢眼 */
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.tag:hover {
+  color: #ffffff; /* 悬停变纯白 */
+  background-color: rgba(255, 255, 255, 0.15); /* 加个浅色底 */
+}
+
+.time {
+  color: #999;
+  font-size: 11px;
 }
 
 /* 加载提示 */
@@ -429,5 +592,27 @@ onMounted(async () => {
 }
 .video-swiper .swiper-slide-active video {
   opacity: 1;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-icon {
+  color: white;
+  font-size: 40px;
+  margin-left: 8px; /* 让三角视觉居中 */
 }
 </style>

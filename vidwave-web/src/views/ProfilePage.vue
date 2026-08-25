@@ -55,23 +55,76 @@
       >
     </div>
 
-    <!-- 视频列表占位 -->
+    <!-- 标签页内容 -->
     <div class="tab-content">
-      <p v-if="currentTab === 'works'">暂无作品</p>
+      <!-- 作品标签页：网格缩略图 -->
+      <div v-if="currentTab === 'works'" class="works-grid">
+        <div
+          v-for="video in myVideos"
+          :key="video.id"
+          class="work-item"
+          @click="openVideo(video)"
+        >
+          <img
+            :src="video.coverUrl || '/video-placeholder.svg'"
+            class="work-cover"
+            alt="封面"
+          />
+          <div class="work-info">
+            <span class="work-title">{{ video.title }}</span>
+          </div>
+        </div>
+
+        <div v-if="myVideos.length === 0" class="empty-tip">
+          暂无作品，快去上传一个吧！
+        </div>
+      </div>
+
+      <!-- 喜欢标签页占位 -->
       <p v-if="currentTab === 'likes'">暂无喜欢的视频</p>
+
+      <!-- 收藏标签页占位 -->
       <p v-if="currentTab === 'collects'">暂无收藏</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import { useUserStore } from "../stores/userStore.js";
+import { useRouter } from "vue-router";
 
 const userStore = useUserStore();
 const currentTab = ref("works");
 const avatarInput = ref(null);
+const myVideos = ref([]);
+const router = useRouter();
+
+// 获取我的作品
+const fetchMyVideos = async () => {
+  try {
+    const res = await axios.get("/api/videos/my", {
+      params: { userId: userStore.userId },
+    });
+    if (res.data.code === 200) {
+      myVideos.value = res.data.data;
+    }
+  } catch (e) {
+    console.error("获取作品失败", e);
+  }
+};
+
+// 点击作品（以后接全屏滑动播放）
+const openVideo = (video) => {
+  router.push({
+    path: "/works",
+    query: {
+      authorId: userStore.userId,
+      videoId: video.id,
+    },
+  });
+};
 
 // 触发文件选择器
 const triggerAvatarUpload = () => {
@@ -93,9 +146,7 @@ const handleAvatarChange = async (event) => {
     });
 
     if (res.data.code === 200) {
-      // 更新 Pinia 状态
       userStore.avatarUrl = res.data.avatarUrl;
-      // 同步更新 localStorage
       localStorage.setItem("avatarUrl", res.data.avatarUrl);
       alert("头像上传成功！");
     } else {
@@ -105,10 +156,13 @@ const handleAvatarChange = async (event) => {
     console.error("头像上传失败", e);
     alert("头像上传失败，请重试");
   } finally {
-    // 清空文件选择器，下次选择同一文件也能触发 change
     event.target.value = "";
   }
 };
+
+onMounted(() => {
+  fetchMyVideos();
+});
 </script>
 
 <style scoped>
@@ -216,9 +270,50 @@ const handleAvatarChange = async (event) => {
   border-bottom: 2px solid white;
 }
 
-.tab-content {
+/* 作品网格 */
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.work-item {
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1e1e1e;
+  transition: transform 0.2s;
+}
+
+.work-item:hover {
+  transform: scale(1.02);
+}
+
+.work-cover {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+}
+
+.work-info {
+  padding: 8px 10px;
+}
+
+.work-title {
+  color: white;
+  font-size: 13px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-tip {
   text-align: center;
   color: #666;
   padding: 40px 0;
+  grid-column: 1 / -1;
 }
 </style>

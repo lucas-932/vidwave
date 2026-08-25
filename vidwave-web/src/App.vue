@@ -7,6 +7,11 @@
     <div class="layout" v-else>
       <!-- 顶部导航栏（以后放Logo、搜索框、头像等） -->
       <header class="top-nav">
+        <!-- 汉堡按钮，仅手机端显示 -->
+        <span class="hamburger" @click="showMobileMenu = !showMobileMenu"
+          >☰</span
+        >
+
         <!-- 左侧 Logo -->
         <span class="logo">VidWave 微澜</span>
 
@@ -78,7 +83,7 @@
 
       <div class="main-content">
         <!-- 左侧菜单栏（以后放精选、推荐、关注等） -->
-        <aside class="side-menu">
+        <aside class="side-menu" :class="{ 'mobile-open': showMobileMenu }">
           <!-- 第一部分：发现 -->
           <div class="menu-group">
             <router-link to="/featured" class="menu-item active">
@@ -135,10 +140,19 @@
             </router-link>
           </div>
         </aside>
-
+        <!-- 移动端遮罩层 -->
+        <div
+          v-if="showMobileMenu"
+          class="menu-overlay"
+          @click="showMobileMenu = false"
+        ></div>
         <!-- 右侧内容区，页面组件在这里切换 -->
         <main class="content-area">
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <keep-alive include="RecommendPage">
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
         </main>
       </div>
     </div>
@@ -154,6 +168,7 @@ import { useUserStore } from "./stores/userStore.js";
 
 const router = useRouter();
 const userStore = useUserStore();
+const showMobileMenu = ref(false);
 
 // 通知弹窗状态
 const showNotice = ref(false);
@@ -357,6 +372,59 @@ const hideNoticePopup = () => {
   padding: 12px 0;
   overflow-y: auto;
 }
+
+/* 汉堡按钮默认隐藏，只在手机端显示 */
+.hamburger {
+  display: none;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  margin-right: 10px;
+  user-select: none;
+}
+
+/* 遮罩层 */
+.menu-overlay {
+  display: none;
+}
+
+/* 手机端适配 */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .search-box {
+    display: none;
+  }
+
+  .side-menu {
+    position: fixed;
+    left: -200px;
+    top: 56px;
+    bottom: 0;
+    background: #1a1a1a;
+    z-index: 200;
+    transition: left 0.3s ease;
+  }
+
+  .side-menu.mobile-open {
+    left: 0;
+  }
+
+  .menu-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 150;
+  }
+}
+
 /* 分割线 */
 .menu-divider {
   height: 1px;

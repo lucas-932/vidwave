@@ -135,4 +135,24 @@ public class UserController {
 
         return result;
     }
+
+    @GetMapping("/{id}")
+    public Map<String, Object> getUserById(@PathVariable Long id) {
+        Map<String, Object> result = new HashMap<>();
+
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            result.put("code", 404);
+            result.put("message", "用户不存在");
+            return result;
+        }
+
+        // 不返回密码
+        user.setPassword(null);
+
+        result.put("code", 200);
+        result.put("message", "success");
+        result.put("data", user);
+        return result;
+    }
 }
