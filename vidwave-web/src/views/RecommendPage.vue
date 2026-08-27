@@ -18,7 +18,6 @@
               :ref="(el) => setVideoRef(el, video.id)"
               :src="video.videoUrl"
               :poster="video.coverUrl"
-              muted
               loop
               playsinline
               webkit-playsinline
@@ -34,6 +33,11 @@
             >
               <span class="play-icon">▶</span>
             </div>
+
+            <div class="sound-icon" @click.stop="toggleSound(video)">
+              {{ globalMuted ? "🔇" : "🔊" }}
+            </div>
+
             <!-- 右侧操作栏 -->
             <div class="actions">
               <!-- 作者头像 + 关注按钮 -->
@@ -133,6 +137,7 @@ const userStore = useUserStore();
 const showComments = ref(false);
 const activeVideoId = ref(null);
 const router = useRouter();
+const globalMuted = ref(true); // true=静音，false=有声
 
 const videoRefs = {};
 const setVideoRef = (el, id) => {
@@ -159,12 +164,14 @@ const onSlideChange = (swiper) => {
 
   currentIndex = swiper.activeIndex;
 
-  // 当前视频从头播放
   const currentVideo = videos.value[currentIndex];
   if (currentVideo) {
     currentVideo.isPlaying = true;
     const videoEl = videoRefs[currentVideo.id];
-    if (videoEl) videoEl.currentTime = 0;
+    if (videoEl) {
+      videoEl.currentTime = 0;
+      // 不再强制 videoEl.muted = true，静音状态由 playCurrentVideo 统一处理
+    }
   }
 
   // 如果评论区开着，更新当前视频ID
@@ -184,7 +191,19 @@ const playCurrentVideo = () => {
   const currentVideo = videoList[currentIndex];
   const videoEl = videoRefs[currentVideo.id];
   if (videoEl) {
-    videoEl.play().catch((err) => console.warn("自动播放失败：", err));
+    videoEl.muted = globalMuted.value;
+    videoEl
+      .play()
+      .then(() => {
+        // 播放成功，保持全局静音状态即可
+      })
+      .catch((err) => {
+        // 如果浏览器阻止带声音播放，则回退为静音并重新播放
+        console.warn("有声播放被阻止，回退静音播放：", err);
+        videoEl.muted = true;
+        globalMuted.value = true;
+        videoEl.play().catch((e2) => console.warn("静音播放也失败：", e2));
+      });
   }
 };
 
@@ -197,6 +216,11 @@ const handleLoaded = (id) => {
 // 获取关注状态
 const fetchFollowStatus = async () => {
   for (const video of videos.value) {
+    // 如果 video.userId 为空，跳过这个视频的关注状态查询
+    if (!video.userId) {
+      video.isFollowed = false;
+      continue;
+    }
     try {
       const res = await axios.get("/api/follow/status", {
         params: { userId: userStore.userId, authorId: video.userId },
@@ -252,9 +276,11 @@ const togglePlay = (video) => {
   if (!videoEl) return;
 
   if (videoEl.paused) {
+    videoEl.muted = globalMuted.value;
     videoEl.play().catch((err) => console.warn("播放失败：", err));
     video.isPlaying = true;
   } else {
+    // 已经播放且有声音，暂停即可
     videoEl.pause();
     video.isPlaying = false;
   }
@@ -329,6 +355,26 @@ const handleCommentAdded = () => {
     currentVideo.commentCount++;
   }
 };
+const toggleSound = (video) => {
+  const videoEl = videoRefs[video.id];
+  if (!videoEl) return;
+
+  // 如果视频暂停着，切换声音的同时让它继续播放
+  if (videoEl.paused) {
+    videoEl.play().catch((err) => console.warn("播放失败：", err));
+    video.isPlaying = true;
+  }
+
+  if (globalMuted.value) {
+    // 当前是静音，打开声音
+    videoEl.muted = false;
+    globalMuted.value = false;
+  } else {
+    // 当前有声，设为静音
+    videoEl.muted = true;
+    globalMuted.value = true;
+  }
+};
 
 onMounted(async () => {
   try {
@@ -337,13 +383,11 @@ onMounted(async () => {
 
     // 给每个视频添加播放状态
     videos.value.forEach((v) => {
-      v.isPlaying = true; // 默认自动播放，设为播放中
+      v.isPlaying = true;
     });
 
     await fetchAuthors();
-
-    await fetchLikeStatus(); // 新增
-
+    await fetchLikeStatus();
     await fetchFollowStatus();
 
     nextTick(() => {
@@ -614,5 +658,21 @@ onActivated(() => {
   color: white;
   font-size: 40px;
   margin-left: 8px; /* 让三角视觉居中 */
+}
+
+.sound-icon {
+  position: absolute;
+  top: 60px;
+  right: 16px;
+  z-index: 15;
+  font-size: 18px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
